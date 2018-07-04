@@ -1,0 +1,12 @@
+# Kconfig - SODAQ One v3 board configuration
+#
+# Copyright (c) 2018 Henrik Brix Andersen <henrik@brixandersen.dk>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_SODAQ_ONE_V3
+
+config BOARD
+	default "sodaq_one_v3"
+
+endif
