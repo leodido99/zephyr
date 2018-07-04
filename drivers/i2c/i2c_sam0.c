@@ -163,8 +163,6 @@ static int i2c_sam0_configure(struct device *dev, u32_t config)
 	i2c->STATUS.bit.BUSSTATE = I2C_SAM0_BUSSTATE_IDLE;
 	wait_synchronization(i2c);
 
-	printk("Busstate %d\n", i2c->STATUS.bit.BUSSTATE);
-
 	return 0;
 }
 
@@ -228,7 +226,7 @@ static void i2c_sam0_isr(void *arg)
 
 	/* Error */
 	if (i2c->INTFLAG.bit.ERROR) {
-		printk("Error on bus\n");
+		SYS_LOG_ERR("Error on bus\n");
 		dev_data->msg.sam0_sts |= i2c->STATUS.reg & (SERCOM_I2CM_STATUS_LENERR |
 				SERCOM_I2CM_STATUS_SEXTTOUT | SERCOM_I2CM_STATUS_MEXTTOUT |
 				SERCOM_I2CM_STATUS_LOWTOUT | SERCOM_I2CM_STATUS_ARBLOST |
