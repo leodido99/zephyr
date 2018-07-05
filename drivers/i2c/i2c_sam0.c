@@ -178,12 +178,14 @@ static void i2c_sam0_isr(void *arg)
 		SYS_LOG_ERR("I2C Slave answered with NACK");
 		dev_data->msg.sam0_sts |= i2c->STATUS.bit.RXNACK;
 		transfer_completed = true;
+		SYS_LOG_DBG("RXNACK STOP");
+		i2c->CTRLB.bit.CMD = I2C_SAM0_STOP_COND_CMD;
+		wait_synchronization(i2c);
 	}
 
 	/* Slave on bus - Byte successfully received */
 	if (i2c->INTFLAG.bit.SB) {
 		if (dev_data->msg.idx + 1 == dev_data->msg.len) {
-			SYS_LOG_DBG("All data received");
 			/* last byte received - send NACK */
 			i2c->CTRLB.bit.ACKACT = I2C_SAM0_NACK_ACTION;
 			wait_synchronization(i2c);
@@ -204,12 +206,12 @@ static void i2c_sam0_isr(void *arg)
 		/* Read byte */
 		dev_data->msg.buf[dev_data->msg.idx++] = i2c->DATA.bit.DATA;
 		wait_synchronization(i2c);
+		SYS_LOG_DBG("R: 0x%X", dev_data->msg.buf[dev_data->msg.idx - 1]);
 	}
 
 	/* Master on bus - Byte transmitted */
 	if (i2c->INTFLAG.bit.MB) {
 		if (dev_data->msg.idx == dev_data->msg.len) {
-			SYS_LOG_DBG("All data transfered");
 			if (dev_data->msg.flags & I2C_MSG_STOP) {
 				/* Send STOP condition */
 				i2c->CTRLB.bit.CMD = I2C_SAM0_STOP_COND_CMD;
@@ -221,6 +223,7 @@ static void i2c_sam0_isr(void *arg)
 			/* Transmit next byte */
 			i2c->DATA.bit.DATA = dev_data->msg.buf[dev_data->msg.idx++];
 			wait_synchronization(i2c);
+			SYS_LOG_DBG("W: 0x%X", dev_data->msg.buf[dev_data->msg.idx - 1]);
 		}
 	}
 
@@ -271,7 +274,7 @@ static int i2c_sam0_transfer(struct device *dev, struct i2c_msg *msgs,
 	i2c->INTFLAG.reg = SERCOM_I2CM_INTFLAG_MASK;
 
 	for (; num_msgs > 0; num_msgs--, msgs++) {
-		SYS_LOG_DBG("i2c_sam0_transfer msg: len=%d flags=%x\n", msgs->len, dev_data->msg.flags);
+		SYS_LOG_DBG("msg: len=%d flags=%x\n", msgs->len, dev_data->msg.flags);
 		dev_data->msg.buf = msgs->buf;
 		dev_data->msg.len = msgs->len;
 		dev_data->msg.idx = 0;
