@@ -1,0 +1,26 @@
+---
+title: Atmel SAM0 External Interrupt Controller driver
+id: atmel,sam0-eic
+version: 0.1
+
+description: >
+    This is a representation of the SAM0 External Interrupt Controller nodes
+
+properties:
+    compatible:
+      type: string
+      category: required
+      description: compatible strings
+      constraint: "atmel,sam0-eic"
+
+    reg:
+      type: int
+      description: mmio register space
+      generation: define
+      category: required
+
+    label:
+      type: string
+      category: required
+      description: Human readable string describing the device (used by Zephyr for API name)
+      generation: define
