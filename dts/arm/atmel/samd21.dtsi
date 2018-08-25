@@ -114,14 +114,12 @@
 			compatible = "atmel,sam0-gpio";
 			reg = <0x41004400 0x80>;
 			label = "PORTA";
-			interrupts = <4 0>;
 		};
 
 		portb: gpio@41004480 {
 			compatible = "atmel,sam0-gpio";
 			reg = <0x41004480 0x80>;
 			label = "PORTB";
-			interrupts = <4 0>;
 		};
 
 		usb0: usb@41005000 {
@@ -136,7 +134,7 @@
 		eic0: eic@40001800 {
 			compatible = "atmel,sam0-eic";
 			reg = <0x40001800 0x30>;
-			label = "EIC";
+			label = "EIC";			
 		};
 	};
 };
