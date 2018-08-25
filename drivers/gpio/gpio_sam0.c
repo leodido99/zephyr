@@ -125,6 +125,9 @@ static int gpio_sam0_init(struct device *dev)
 	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_EIC | GCLK_CLKCTRL_GEN_GCLK0 |
 			    GCLK_CLKCTRL_CLKEN;
 
+	/* Enable EIC clock in PM */
+	PM->APBAMASK.reg |= PM_APBAMASK_EIC;
+
 	return 0;
 }
 
