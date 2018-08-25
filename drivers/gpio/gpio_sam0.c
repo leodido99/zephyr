@@ -10,7 +10,7 @@
 #include <soc.h>
 
 #define SYS_LOG_DOMAIN "dev/gpio_sam0"
-#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_GPIO_SAM0_LEVEL
 #include <logging/sys_log.h>
 
 struct gpio_sam0_config {
