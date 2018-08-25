@@ -125,6 +125,8 @@ static const struct gpio_driver_api gpio_sam0_api = {
 
 static int gpio_sam0_init(struct device *dev)
 {
+	Eic *const eic = (Eic *const)CONFIG_EIC_SAM0_BASE_ADDRESS;
+
 	SYS_LOG_INF("GPIO SAM0 Init");
 
 	/* Enable the GCLK */
@@ -133,6 +135,12 @@ static int gpio_sam0_init(struct device *dev)
 
 	/* Enable EIC clock in PM */
 	PM->APBAMASK.reg |= PM_APBAMASK_EIC;
+
+	/* Enable EIC */
+	eic->CTRL.bit.ENABLE = 1;
+
+	/* Wait for synchronization */
+	while (eic->STATUS.bit.SYNCBUSY == 1);
 
 	return 0;
 }
