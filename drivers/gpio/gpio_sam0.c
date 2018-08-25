@@ -9,6 +9,10 @@
 #include <gpio.h>
 #include <soc.h>
 
+#define SYS_LOG_DOMAIN "dev/gpio_sam0"
+#define SYS_LOG_LEVEL CONFIG_SYS_LOG_I2C_LEVEL
+#include <logging/sys_log.h>
+
 struct gpio_sam0_config {
 	PortGroup *regs;
 };
@@ -121,6 +125,8 @@ static const struct gpio_driver_api gpio_sam0_api = {
 
 static int gpio_sam0_init(struct device *dev)
 {
+	SYS_LOG_INF("GPIO SAM0 Init");
+
 	/* Enable the GCLK */
 	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_EIC | GCLK_CLKCTRL_GEN_GCLK0 |
 			    GCLK_CLKCTRL_CLKEN;
