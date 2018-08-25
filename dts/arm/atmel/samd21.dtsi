@@ -134,7 +134,8 @@
 		eic0: eic@40001800 {
 			compatible = "atmel,sam0-eic";
 			reg = <0x40001800 0x30>;
-			label = "EIC";			
+			label = "EIC";
+			interrupts = <4 0>;
 		};
 	};
 };
