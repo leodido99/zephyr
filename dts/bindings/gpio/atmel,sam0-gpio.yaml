@@ -24,3 +24,9 @@ properties:
       category: required
       description: Human readable string describing the device (used by Zephyr for API name)
       generation: define
+
+    interrupts:
+      type: compound
+      category: required
+      description: required interrupts
+      generation: define
