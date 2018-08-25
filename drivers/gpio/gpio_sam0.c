@@ -119,7 +119,14 @@ static const struct gpio_driver_api gpio_sam0_api = {
 	.read = gpio_sam0_read,
 };
 
-static int gpio_sam0_init(struct device *dev) { return 0; }
+static int gpio_sam0_init(struct device *dev)
+{
+	/* Enable the GCLK */
+	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_EIC | GCLK_CLKCTRL_GEN_GCLK0 |
+			    GCLK_CLKCTRL_CLKEN;
+
+	return 0;
+}
 
 /* Port A */
 #ifdef CONFIG_GPIO_SAM0_PORTA_BASE_ADDRESS
