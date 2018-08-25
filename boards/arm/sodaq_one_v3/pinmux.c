@@ -91,6 +91,11 @@ static int board_pinmux_init(struct device *dev)
 #if CONFIG_I2C_SAM0_SERCOM5_BASE_ADDRESS
 #error Pin mapping is not configured
 #endif
+
+	/* PA30 SWCLK PA31 SWDIO */
+	pinmux_pin_set(muxa, 30, PINMUX_FUNC_G);
+	pinmux_pin_set(muxa, 31, PINMUX_FUNC_G);
+
 	return 0;
 }
 
