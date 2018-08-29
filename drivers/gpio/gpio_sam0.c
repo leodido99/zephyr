@@ -8,6 +8,9 @@
 #include <device.h>
 #include <gpio.h>
 #include <soc.h>
+#include <kernel.h>
+#include <interrupt_controller/exti_sam0.h>
+#include "gpio_utils.h"
 
 #define SYS_LOG_DOMAIN "dev/gpio_sam0"
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_GPIO_SAM0_LEVEL
@@ -17,8 +20,23 @@ struct gpio_sam0_config {
 	PortGroup *regs;
 };
 
+struct gpio_sam0_data {
+	u32_t cb_pins;
+	sys_slist_t cb;
+};
+
 #define DEV_CFG(dev) \
 	((const struct gpio_sam0_config *const)(dev)->config->config_info)
+
+static void gpio_sam0_isr(int line, void *arg)
+{
+	struct device *dev = arg;
+	struct gpio_sam0_data *data = dev->driver_data;
+
+	if (BIT(line) & data->cb_pins) {
+		_gpio_fire_callbacks(&data->cb, dev, BIT(line));
+	}
+}
 
 static int gpio_sam0_config(struct device *dev, int access_op, u32_t pin,
 			    int flags)
@@ -29,6 +47,7 @@ static int gpio_sam0_config(struct device *dev, int access_op, u32_t pin,
 	bool is_out = (flags & GPIO_DIR_MASK) == GPIO_DIR_OUT;
 	int pud = flags & GPIO_PUD_MASK;
 	PORT_PINCFG_Type pincfg;
+	int trigger = -1;
 
 	if (access_op != GPIO_ACCESS_BY_PIN) {
 		return -ENOTSUP;
@@ -69,8 +88,34 @@ static int gpio_sam0_config(struct device *dev, int access_op, u32_t pin,
 	regs->PINCFG[pin] = pincfg;
 
 	if ((flags & GPIO_INT) != 0) {
-		/* TODO(mlhx): implement. */
-		return -ENOTSUP;
+		sam0_exti_set_callback(pin, gpio_sam0_isr, dev);
+
+		if (flags & GPIO_INT_EDGE) {
+			if (flags & GPIO_INT_DOUBLE_EDGE) {
+				trigger = SAM0_EXTI_TRIG_BOTH;
+				SYS_LOG_INF("Trigger both edge");
+			} else if (flags & (GPIO_INT_EDGE | GPIO_INT_ACTIVE_HIGH)) {
+				trigger = SAM0_EXTI_TRIG_RISING;
+				SYS_LOG_INF("Trigger rising edge");
+			} else {
+				trigger = SAM0_EXTI_TRIG_FALLING;
+				SYS_LOG_INF("Trigger falling edge");
+			}
+		} else if (flags & GPIO_INT_LEVEL) {
+			if (flags & GPIO_INT_ACTIVE_HIGH) {
+				trigger = SAM0_EXTI_TRIG_HIGH_LEVEL;
+				SYS_LOG_INF("Trigger high level");
+			} else {
+				trigger = SAM0_EXTI_TRIG_LOW_LEVEL;
+				SYS_LOG_INF("Trigger low level");
+			}
+		}
+
+		if (trigger > 0) {
+			sam0_exti_trigger(pin, trigger);
+		}
+
+		sam0_exti_enable(pin);
 	}
 
 	if ((flags & GPIO_POL_MASK) != GPIO_POL_NORMAL) {
@@ -117,31 +162,56 @@ static int gpio_sam0_read(struct device *dev, int access_op, u32_t pin,
 	return 0;
 }
 
+static int gpio_sam0_manage_callback(struct device *dev,
+				      struct gpio_callback *callback,
+				      bool set)
+{
+	struct gpio_sam0_data *data = dev->driver_data;
+
+	_gpio_manage_callback(&data->cb, callback, set);
+
+	return 0;
+}
+
+static int gpio_sam0_enable_callback(struct device *dev,
+				      int access_op, u32_t pin)
+{
+	struct gpio_sam0_data *data = dev->driver_data;
+
+	if (access_op != GPIO_ACCESS_BY_PIN) {
+		return -ENOTSUP;
+	}
+
+	data->cb_pins |= BIT(pin);
+
+	return 0;
+}
+
+static int gpio_sam0_disable_callback(struct device *dev,
+				       int access_op, u32_t pin)
+{
+	struct gpio_sam0_data *data = dev->driver_data;
+
+	if (access_op != GPIO_ACCESS_BY_PIN) {
+		return -ENOTSUP;
+	}
+
+	data->cb_pins &= ~BIT(pin);
+
+	return 0;
+}
+
 static const struct gpio_driver_api gpio_sam0_api = {
 	.config = gpio_sam0_config,
 	.write = gpio_sam0_write,
 	.read = gpio_sam0_read,
+	.manage_callback = gpio_sam0_manage_callback,
+	.enable_callback = gpio_sam0_enable_callback,
+	.disable_callback = gpio_sam0_disable_callback,
 };
 
 static int gpio_sam0_init(struct device *dev)
 {
-	Eic *const eic = (Eic *const)CONFIG_EIC_SAM0_BASE_ADDRESS;
-
-	SYS_LOG_INF("GPIO SAM0 Init");
-
-	/* Enable the GCLK */
-	GCLK->CLKCTRL.reg = GCLK_CLKCTRL_ID_EIC | GCLK_CLKCTRL_GEN_GCLK0 |
-			    GCLK_CLKCTRL_CLKEN;
-
-	/* Enable EIC clock in PM */
-	PM->APBAMASK.reg |= PM_APBAMASK_EIC;
-
-	/* Enable EIC */
-	eic->CTRL.bit.ENABLE = 1;
-
-	/* Wait for synchronization */
-	while (eic->STATUS.bit.SYNCBUSY == 1);
-
 	return 0;
 }
 
@@ -152,8 +222,10 @@ static const struct gpio_sam0_config gpio_sam0_config_0 = {
 	.regs = (PortGroup *)CONFIG_GPIO_SAM0_PORTA_BASE_ADDRESS,
 };
 
+static struct gpio_sam0_data gpio_sam0_data_0;
+
 DEVICE_AND_API_INIT(gpio_sam0_0, CONFIG_GPIO_SAM0_PORTA_LABEL, gpio_sam0_init,
-		    NULL, &gpio_sam0_config_0, POST_KERNEL,
+		    &gpio_sam0_data_0, &gpio_sam0_config_0, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam0_api);
 #endif
 
@@ -164,7 +236,9 @@ static const struct gpio_sam0_config gpio_sam0_config_1 = {
 	.regs = (PortGroup *)CONFIG_GPIO_SAM0_PORTB_BASE_ADDRESS,
 };
 
+static struct gpio_sam0_data gpio_sam0_data_1;
+
 DEVICE_AND_API_INIT(gpio_sam0_1, CONFIG_GPIO_SAM0_PORTB_LABEL, gpio_sam0_init,
-		    NULL, &gpio_sam0_config_1, POST_KERNEL,
+		    &gpio_sam0_data_1, &gpio_sam0_config_1, POST_KERNEL,
 		    CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_sam0_api);
 #endif
