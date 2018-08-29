@@ -1,0 +1,36 @@
+# Kconfig - SAM0 EXTI configuration
+#
+# Copyright (c) 2018 Léonard Bise
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config EXTI_SAM0
+	bool "External Interrupt Controller (EXTI) Driver for SAM0 family of MCUs"
+	default y if SOC_FAMILY_SAM0
+	help
+	 Enable EXTI driver for SAM0 line of MCUs
+
+if EXTI_SAM0
+
+config SYS_LOG_EXTI_SAM0_LEVEL
+	int
+	prompt "SAM0 driver log level"
+	depends on EXTI_SAM0 && SYS_LOG
+	default 0
+	help
+	  Sets log level for EXTI SAM0 driver
+
+	  Levels are:
+
+	  - 0 OFF, do not write
+
+	  - 1 ERROR, only write SYS_LOG_ERR
+
+	  - 2 WARNING, write SYS_LOG_WRN in addition to previous level
+
+	  - 3 INFO, write SYS_LOG_INF in addition to previous levels
+
+	  - 4 DEBUG, write SYS_LOG_DBG in addition to previous levels
+
+endif #EXTI_SAM0
