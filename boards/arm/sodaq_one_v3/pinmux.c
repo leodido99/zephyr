@@ -44,8 +44,7 @@ static int board_pinmux_init(struct device *dev)
 	pinmux_pin_set(muxa, 8, PINMUX_FUNC_C);
 	pinmux_pin_set(muxa, 9, PINMUX_FUNC_C);
 	pinmux_pin_set(muxa, 10, PINMUX_FUNC_C);
-	//pinmux_pin_set(muxa, 11, PINMUX_FUNC_C);
-	pinmux_pin_set(muxa, 11, PINMUX_FUNC_A);
+	pinmux_pin_set(muxa, 11, PINMUX_FUNC_C);
 #endif
 
 #if CONFIG_SPI_SAM0_SERCOM1_BASE_ADDRESS
@@ -96,8 +95,6 @@ static int board_pinmux_init(struct device *dev)
 	/* PA30 SWCLK PA31 SWDIO */
 	pinmux_pin_set(muxa, 30, PINMUX_FUNC_G);
 	pinmux_pin_set(muxa, 31, PINMUX_FUNC_G);
-
-	pinmux_pin_set(muxb, 8, PINMUX_FUNC_A);
 
 	return 0;
 }
