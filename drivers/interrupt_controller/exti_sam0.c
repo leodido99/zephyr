@@ -133,7 +133,7 @@ int sam0_exti_trigger(int line, enum sam0_exti_trigger trigger)
 
 	sam0_exti_device_disable();
 
-	regs->CONFIG[conf_n].reg |= trigger << (sense_x * 4);
+	regs->CONFIG[conf_n].reg |= (trigger << (sense_x * 4));
 
 	sam0_exti_device_enable();
 
@@ -181,6 +181,7 @@ static struct sam0_exti_data exti_data;
 DEVICE_INIT(exti_sam0, SAM0_EXTI_NAME, sam0_exti_init,
 	    &exti_data, NULL,
 	    POST_KERNEL, 90);
+/* Ensure this module is initialized after most of the others for some reason? */
 //CONFIG_KERNEL_INIT_PRIORITY_DEVICE
 
 int sam0_exti_set_callback(int line, sam0_exti_callback_t cb, void *arg)
