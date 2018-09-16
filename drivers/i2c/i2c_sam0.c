@@ -72,6 +72,7 @@ struct sam0_msg {
 /* Device run time data */
 struct i2c_sam0_data {
 	struct k_sem sem;
+	struct k_mutex mutex;
 	struct sam0_msg msg;
 };
 
@@ -270,6 +271,8 @@ static int i2c_sam0_transfer(struct device *dev, struct i2c_msg *msgs,
 		return 0;
 	}
 
+	k_mutex_lock(&dev_data->mutex, K_FOREVER);
+
 	/* Clear pending interrupts */
 	i2c->INTFLAG.reg = SERCOM_I2CM_INTFLAG_MASK;
 
@@ -292,9 +295,12 @@ static int i2c_sam0_transfer(struct device *dev, struct i2c_msg *msgs,
 
 		if (dev_data->msg.sam0_sts) {
 			/* Error during transmission */
+			k_mutex_unlock(&dev_data->mutex);
 			return -EIO;
 		}
 	}
+
+	k_mutex_unlock(&dev_data->mutex);
 
 	return 0;
 }
@@ -306,6 +312,8 @@ static int i2c_sam0_init(struct device *dev) {
 
 	/* Initialize semaphore */
 	k_sem_init(&data->sem, 0, 1);
+	/* TODO How to protect i2c? Is it user responsability? */
+	k_mutex_init(&data->mutex);
 
 	/* Enable the GCLK */
 	GCLK->CLKCTRL.reg = cfg->gclk_clkctrl_id | GCLK_CLKCTRL_GEN_GCLK0 |
