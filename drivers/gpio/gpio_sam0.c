@@ -16,6 +16,10 @@
 #define SYS_LOG_LEVEL CONFIG_SYS_LOG_GPIO_SAM0_LEVEL
 #include <logging/sys_log.h>
 
+/* FIXME Get from exti driver */
+#define NB_EXTI_LINES 16
+#define PIN_TO_LINE(pin) (pin % NB_EXTI_LINES)
+
 struct gpio_sam0_config {
 	PortGroup *regs;
 };
@@ -88,7 +92,8 @@ static int gpio_sam0_config(struct device *dev, int access_op, u32_t pin,
 	regs->PINCFG[pin] = pincfg;
 
 	if ((flags & GPIO_INT) != 0) {
-		sam0_exti_set_callback(pin, gpio_sam0_isr, dev);
+		SYS_LOG_DBG("pin=%d -> line=%d", pin, PIN_TO_LINE(pin));
+		sam0_exti_set_callback(PIN_TO_LINE(pin), gpio_sam0_isr, dev);
 
 		if (flags & GPIO_INT_EDGE) {
 			if (flags & GPIO_INT_DOUBLE_EDGE) {
@@ -112,10 +117,10 @@ static int gpio_sam0_config(struct device *dev, int access_op, u32_t pin,
 		}
 
 		if (trigger > 0) {
-			sam0_exti_trigger(pin, trigger);
+			sam0_exti_trigger(PIN_TO_LINE(pin), trigger);
 		}
 
-		sam0_exti_enable(pin);
+		sam0_exti_enable(PIN_TO_LINE(pin));
 	}
 
 	if ((flags & GPIO_POL_MASK) != GPIO_POL_NORMAL) {
