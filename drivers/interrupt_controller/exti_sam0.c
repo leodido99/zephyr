@@ -146,6 +146,8 @@ static void sam0_eic_isr(void *arg)
 	struct sam0_exti_data *data = dev->driver_data;
 	int line;
 
+	SYS_LOG_DBG("ISR");
+
 	for (line = 0; line < EXTI_LINES; line++) {
 		if (sam0_exti_is_pending(line)) {
 			sam0_exti_clear_pending(line);
